@@ -1,0 +1,21 @@
+
+syntax = "proto3";
+
+package wardu.scheduler.v1;
+
+option go_package = "shared/proto/scheduler;scheduler";
+
+service SchedulerService {
+  rpc CreateJob(CreateJobRequest) returns (CreateJobResponse);
+}
+
+message CreateJobRequest {
+  string job_id = 1;
+  string worker = 2;
+  bytes payload = 3;
+  int64 priority = 4;
+}
+
+message CreateJobResponse {
+  string job_id = 1;
+}

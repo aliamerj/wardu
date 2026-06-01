@@ -20,7 +20,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	s.CreateRoutes(e)
+	api := e.Group("api/v1")
+	{
+		s.CreateApiV1Routes(api)
+	}
 
 	return e
 }

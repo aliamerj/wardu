@@ -9,11 +9,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aliamerj/wardu/services/api-gateway/clients"
 	"github.com/aliamerj/wardu/services/api-gateway/server"
 )
 
 func main() {
-	server := server.NewServer()
+	srv, err := clients.NewServices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	server := server.NewServer(srv)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
@@ -21,13 +27,17 @@ func main() {
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(server, done)
 
-	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
 
 	// Wait for the graceful shutdown to complete
 	<-done
+
+	if err := srv.CloseAll(); err != nil {
+		log.Printf("error closing services: %v", err)
+	}
+
 	log.Println("Graceful shutdown complete.")
 }
 

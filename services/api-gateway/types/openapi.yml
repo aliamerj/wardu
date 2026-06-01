@@ -1,0 +1,168 @@
+openapi: 3.0.3
+
+info:
+  title: Wardu API
+  version: 0.1.0
+  description: |
+    Kubernetes-native distributed job scheduler.
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Jobs
+
+paths:
+  /api/v1/jobs:
+    post:
+      tags:
+        - Jobs
+      summary: Submit a job
+      operationId: submitJob
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitJobRequest"
+
+      responses:
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitJobResponse"
+
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/jobs/{id}:
+    get:
+      tags:
+        - Jobs
+      summary: Get job status
+      operationId: getJob
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Job found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    SubmitJobRequest:
+      type: object
+      required:
+        - worker
+        - payload
+
+      properties:
+        worker:
+          type: string
+          minLength: 1
+          example: image-processor
+
+        payload:
+          type: object
+          additionalProperties: true
+          example:
+            image: cat.jpg
+
+        priority:
+          $ref: "#/components/schemas/Priority"
+
+    SubmitJobResponse:
+      type: object
+      required:
+        - job_id
+        - status
+
+      properties:
+        job_id:
+          type: string
+          example: 01K3QJ4YQ5R2J3N3M4W8JH9A7B
+
+        status:
+          $ref: "#/components/schemas/JobStatus"
+
+    Job:
+      type: object
+      required:
+        - id
+        - worker
+        - status
+        - created_at
+
+      properties:
+        id:
+          type: string
+
+        worker:
+          type: string
+
+        payload:
+          type: object
+          additionalProperties: true
+
+        status:
+          $ref: "#/components/schemas/JobStatus"
+
+        result:
+          type: object
+          additionalProperties: true
+
+        created_at:
+          type: string
+          format: date-time
+
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    JobStatus:
+      type: string
+      enum:
+        - pending
+        - queued
+        - running
+        - succeeded
+        - failed
+        - dead
+        - rejected
+
+    Priority:
+      type: number
+      default: 1
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+
+      properties:
+        message:
+          type: string

@@ -4,4 +4,6 @@ metadata:
   name: app-config
 data:
   ENVIRONMENT: "development"
-  GATEWAY_HTTP_PORT: "8081"
+  GATEWAY_HTTP_PORT: "8080"
+  SCHEDULER_GRPC_ADDR: "scheduler-service:8081"
+  SCHEDULER_GRPC_PORT: ":8081"
