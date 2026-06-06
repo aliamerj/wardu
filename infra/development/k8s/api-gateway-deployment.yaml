@@ -28,18 +28,9 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "125m"
-          env:
-            # Accessing an env variable from the app-config config map
-            - name: GATEWAY_HTTP_PORT
-              valueFrom:
-                configMapKeyRef:
-                  key: GATEWAY_HTTP_PORT
-                  name: app-config
-            - name: SCHEDULER_GRPC_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  key: SCHEDULER_GRPC_ADDR
-                  name: app-config
+          envFrom:
+            - configMapRef:
+                name: app-config
 
 ---
 apiVersion: v1

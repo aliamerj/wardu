@@ -76,21 +76,47 @@ components:
     SubmitJobRequest:
       type: object
       required:
-        - worker
+        - image
         - payload
 
       properties:
-        worker:
+        image:
           type: string
-          minLength: 1
-          example: image-processor
+          minLength: 5
+          example: ghcr.io/user/my-agent:latest
 
         payload:
           type: object
           additionalProperties: true
           example:
-            image: cat.jpg
-
+            topic: space exploration
+        namespace:
+          type: string
+          minLength: 1
+        autorun:
+          type: boolean
+          example: true
+          default: false
+        idle_timeout_seconds:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          default: 90
+        timeout_seconds:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          default: 300
+        max_attempts:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          default: 3
+        entrypoint:
+          type: array
+          items:
+            type: string
+          example: ["python", "run.py"]
         priority:
           $ref: "#/components/schemas/Priority"
 
@@ -156,6 +182,8 @@ components:
 
     Priority:
       type: number
+      minimum: 1
+      maximum: 100
       default: 1
 
     ErrorResponse:

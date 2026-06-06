@@ -3,6 +3,16 @@ load('ext://restart_process', 'docker_build_with_restart')
 k8s_yaml('./infra/development/k8s/app-config.yaml')
 
 #############
+### postgres
+#############
+k8s_yaml("./infra/development/k8s/postgres-deployment.yaml")
+k8s_resource(
+  'postgres', 
+  port_forwards=['5432:5432'],
+  labels=['db'],
+  )
+
+#############
 ### scheduler
 #############
 k8s_yaml("./infra/development/k8s/scheduler-deployment.yaml")
@@ -12,7 +22,7 @@ local_resource(
   scheduler_compile_cmd,
   deps=[
   "./services/scheduler",
-  "./shared"
+  "./shared",
   ],
   labels=["compile"]
   )
@@ -35,6 +45,7 @@ k8s_resource(
     port_forwards=['8081:8081'],
     resource_deps=[
       'scheduler_compile',
+       'postgres',
     ],
     labels=['services'],
 )
@@ -75,6 +86,7 @@ k8s_resource(
     port_forwards=['8080:8080'],
     resource_deps=[
       'api-gateway-compile',
+       'postgres',
     ],
     labels=['services'],
 )

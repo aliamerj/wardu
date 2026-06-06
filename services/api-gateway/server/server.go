@@ -20,7 +20,7 @@ type Server struct {
 }
 
 func NewServer(srv *clients.Services) *http.Server {
-	httpPort := env.GetString("GATEWAY_HTTP_PORT", env.GetString("HTTP_PORT", "8080"))
+	httpPort := env.GetString("GATEWAY_HTTP_PORT", "8080")
 	port, _ := strconv.Atoi(httpPort)
 
 	NewServer := &Server{

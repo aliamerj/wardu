@@ -42,9 +42,15 @@ type Priority = float32
 
 // SubmitJobRequest defines model for SubmitJobRequest.
 type SubmitJobRequest struct {
-	Payload  map[string]interface{} `json:"payload"`
-	Priority *Priority              `json:"priority,omitempty"`
-	Worker   string                 `json:"worker"`
+	Autorun            *bool                  `json:"autorun,omitempty"`
+	Entrypoint         *[]string              `json:"entrypoint,omitempty"`
+	IdleTimeoutSeconds *float32               `json:"idle_timeout_seconds,omitempty"`
+	Image              string                 `json:"image"`
+	MaxAttempts        *float32               `json:"max_attempts,omitempty"`
+	Namespace          *string                `json:"namespace,omitempty"`
+	Payload            map[string]interface{} `json:"payload"`
+	Priority           *Priority              `json:"priority,omitempty"`
+	TimeoutSeconds     *float32               `json:"timeout_seconds,omitempty"`
 }
 
 // SubmitJobResponse defines model for SubmitJobResponse.

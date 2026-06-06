@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/aliamerj/wardu/services/api-gateway/clients"
 	"github.com/aliamerj/wardu/services/api-gateway/types"
@@ -22,10 +21,6 @@ func (h *Handler) submitJob(c *echo.Context) error {
 		return withErr(c, http.StatusBadRequest)
 	}
 
-	if strings.TrimSpace(req.Worker) == "" {
-		return withErr(c, http.StatusBadRequest)
-	}
-
 	if len(req.Payload) == 0 {
 		return withErr(c, http.StatusBadRequest)
 	}
@@ -38,7 +33,6 @@ func (h *Handler) submitJob(c *echo.Context) error {
 	job := clients.Job{
 		JobId:   newJobID(),
 		Payload: payload,
-		Worker:  req.Worker,
 	}
 	if req.Priority != nil {
 		job.Priority = int64(*req.Priority)
