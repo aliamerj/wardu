@@ -1,6 +1,6 @@
 package database
 
-import "github.com/aliamerj/wardu/shared/database/models"
+import "github.com/aliamerj/wardu/shared/models"
 
 func (s *service) CreateNamespace(ns *models.Namespace) error {
 	return s.db.Model(&models.Namespace{}).Create(ns).Error
@@ -21,7 +21,7 @@ func (s *service) GetAllNamespaces() ([]*models.Namespace, error) {
 	return nss, nil
 }
 
-func (s *service) GetNamespaceById(name string) (*models.Namespace, error) {
+func (s *service) GetNamespaceByName(name string) (*models.Namespace, error) {
 	var ns models.Namespace
 
 	if err := s.db.

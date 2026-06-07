@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/aliamerj/wardu/services/api-gateway/clients"
 	"github.com/aliamerj/wardu/services/api-gateway/types"
+	"github.com/aliamerj/wardu/shared/models"
 	"github.com/labstack/echo/v5"
 )
 
@@ -21,26 +20,12 @@ func (h *Handler) submitJob(c *echo.Context) error {
 		return withErr(c, http.StatusBadRequest)
 	}
 
-	if len(req.Payload) == 0 {
-		return withErr(c, http.StatusBadRequest)
-	}
-
-	payload, err := json.Marshal(req.Payload)
+	job, err := models.BuildNewJob(req)
 	if err != nil {
 		return withErr(c, http.StatusBadRequest)
 	}
 
-	job := clients.Job{
-		JobId:   newJobID(),
-		Payload: payload,
-	}
-	if req.Priority != nil {
-		job.Priority = int64(*req.Priority)
-	} else {
-		job.Priority = 1
-	}
-
-	res, err := h.srv.Scheduler.CreateJob(ctx, &job)
+	res, err := h.srv.Scheduler.CreateJob(ctx, job)
 	if err != nil {
 		return withErr(c, http.StatusServiceUnavailable, "scheduler unavailable")
 	}

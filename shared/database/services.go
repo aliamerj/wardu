@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/aliamerj/wardu/shared/database/models"
+	"github.com/aliamerj/wardu/shared/models"
 )
 
 type Service interface {
@@ -15,7 +15,7 @@ type Service interface {
 	CreateNamespace(ns *models.Namespace) error
 	DeleteNamespace(name string) error
 	GetAllNamespaces() ([]*models.Namespace, error)
-	GetNamespaceById(name string) (*models.Namespace, error)
+	GetNamespaceByName(name string) (*models.Namespace, error)
 	UpdateNamespace(name string, newNS models.Namespace) (*models.Namespace, error)
 }
 

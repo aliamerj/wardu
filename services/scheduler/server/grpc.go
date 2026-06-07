@@ -24,7 +24,8 @@ func NewGrpc(server *grpc.Server) *gRPCServer {
 }
 
 func (g *gRPCServer) CreateJob(ctx context.Context, req *pb.CreateJobRequest) (*pb.CreateJobResponse, error) {
+	g.h.CreateJob(ctx, req)
 	return &pb.CreateJobResponse{
-		JobId: req.JobId + " from grpc",
+		JobId: " from grpc",
 	}, nil
 }

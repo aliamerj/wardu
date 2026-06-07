@@ -6,6 +6,7 @@ import (
 
 	"github.com/aliamerj/wardu/shared/database"
 	"github.com/aliamerj/wardu/shared/k8s"
+	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
 )
 
 type Handler struct {
@@ -24,6 +25,18 @@ func New(db database.Service, k8s *k8s.Client) *Handler {
 	}
 
 	return h
+}
+
+func (h *Handler) CreateJob(ctx context.Context, req *pb.CreateJobRequest) (string, error) {
+	_, err := h.db.GetNamespaceByName(req.GetNamespace())
+	if err != nil {
+		return "", err
+	}
+	// Does Deployment exist for this image?
+	//   No  → Create K8s Deployment (0 replicas)
+	//   Yes → Skip
+	// Save job to Postgres (status: ready)
+	return "", nil
 }
 
 func (h *Handler) createDefualtNamespace() error {

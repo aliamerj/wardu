@@ -10,10 +10,15 @@ service SchedulerService {
 }
 
 message CreateJobRequest {
-  string job_id = 1;
-  string worker = 2;
-  bytes payload = 3;
-  int64 priority = 4;
+  string image = 1;
+  bytes payload = 2;
+  int64 priority = 3;
+  bool autorun = 4;
+  repeated string entrypoint = 5;
+  float idle_timeout_seconds = 6;
+  float max_attempts = 7;
+  string namespace = 8;
+  float timeout_seconds = 9;
 }
 
 message CreateJobResponse {

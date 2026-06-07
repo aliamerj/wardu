@@ -22,13 +22,18 @@ const (
 )
 
 type CreateJobRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	Worker        string                 `protobuf:"bytes,2,opt,name=worker,proto3" json:"worker,omitempty"`
-	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	Priority      int64                  `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Image              string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	Payload            []byte                 `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	Priority           int64                  `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
+	Autorun            bool                   `protobuf:"varint,4,opt,name=autorun,proto3" json:"autorun,omitempty"`
+	Entrypoint         []string               `protobuf:"bytes,5,rep,name=entrypoint,proto3" json:"entrypoint,omitempty"`
+	IdleTimeoutSeconds float32                `protobuf:"fixed32,6,opt,name=idle_timeout_seconds,json=idleTimeoutSeconds,proto3" json:"idle_timeout_seconds,omitempty"`
+	MaxAttempts        float32                `protobuf:"fixed32,7,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
+	Namespace          string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	TimeoutSeconds     float32                `protobuf:"fixed32,9,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateJobRequest) Reset() {
@@ -61,16 +66,9 @@ func (*CreateJobRequest) Descriptor() ([]byte, []int) {
 	return file_scheduler_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CreateJobRequest) GetJobId() string {
+func (x *CreateJobRequest) GetImage() string {
 	if x != nil {
-		return x.JobId
-	}
-	return ""
-}
-
-func (x *CreateJobRequest) GetWorker() string {
-	if x != nil {
-		return x.Worker
+		return x.Image
 	}
 	return ""
 }
@@ -85,6 +83,48 @@ func (x *CreateJobRequest) GetPayload() []byte {
 func (x *CreateJobRequest) GetPriority() int64 {
 	if x != nil {
 		return x.Priority
+	}
+	return 0
+}
+
+func (x *CreateJobRequest) GetAutorun() bool {
+	if x != nil {
+		return x.Autorun
+	}
+	return false
+}
+
+func (x *CreateJobRequest) GetEntrypoint() []string {
+	if x != nil {
+		return x.Entrypoint
+	}
+	return nil
+}
+
+func (x *CreateJobRequest) GetIdleTimeoutSeconds() float32 {
+	if x != nil {
+		return x.IdleTimeoutSeconds
+	}
+	return 0
+}
+
+func (x *CreateJobRequest) GetMaxAttempts() float32 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+func (x *CreateJobRequest) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *CreateJobRequest) GetTimeoutSeconds() float32 {
+	if x != nil {
+		return x.TimeoutSeconds
 	}
 	return 0
 }
@@ -137,12 +177,19 @@ var File_scheduler_proto protoreflect.FileDescriptor
 
 const file_scheduler_proto_rawDesc = "" +
 	"\n" +
-	"\x0fscheduler.proto\x12\x12wardu.scheduler.v1\"w\n" +
-	"\x10CreateJobRequest\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
-	"\x06worker\x18\x02 \x01(\tR\x06worker\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\fR\apayload\x12\x1a\n" +
-	"\bpriority\x18\x04 \x01(\x03R\bpriority\"*\n" +
+	"\x0fscheduler.proto\x12\x12wardu.scheduler.v1\"\xb4\x02\n" +
+	"\x10CreateJobRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\x12\x18\n" +
+	"\apayload\x18\x02 \x01(\fR\apayload\x12\x1a\n" +
+	"\bpriority\x18\x03 \x01(\x03R\bpriority\x12\x18\n" +
+	"\aautorun\x18\x04 \x01(\bR\aautorun\x12\x1e\n" +
+	"\n" +
+	"entrypoint\x18\x05 \x03(\tR\n" +
+	"entrypoint\x120\n" +
+	"\x14idle_timeout_seconds\x18\x06 \x01(\x02R\x12idleTimeoutSeconds\x12!\n" +
+	"\fmax_attempts\x18\a \x01(\x02R\vmaxAttempts\x12\x1c\n" +
+	"\tnamespace\x18\b \x01(\tR\tnamespace\x12'\n" +
+	"\x0ftimeout_seconds\x18\t \x01(\x02R\x0etimeoutSeconds\"*\n" +
 	"\x11CreateJobResponse\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId2l\n" +
 	"\x10SchedulerService\x12X\n" +

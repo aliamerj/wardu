@@ -7,8 +7,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/aliamerj/wardu/shared/database/models"
 	"github.com/aliamerj/wardu/shared/env"
+	"github.com/aliamerj/wardu/shared/models"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 )
