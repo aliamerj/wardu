@@ -61,6 +61,18 @@ func (c *Client) CreateNamespace(ctx context.Context, name string, ops *models.N
 	return ns, nil
 }
 
+func (c *Client) CheckNamespaceByDNS(ctx context.Context, dns string) (bool, error) {
+	_, err := c.k8s.CoreV1().Namespaces().Get(ctx, dns, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (c *Client) createLimitRange(ctx context.Context, ns *models.Namespace) error {
 	limitRange := &corev1.LimitRange{
 		ObjectMeta: metav1.ObjectMeta{

@@ -7,11 +7,12 @@
 package scheduler
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -132,6 +133,7 @@ func (x *CreateJobRequest) GetTimeoutSeconds() float32 {
 type CreateJobResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,6 +175,13 @@ func (x *CreateJobResponse) GetJobId() string {
 	return ""
 }
 
+func (x *CreateJobResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_scheduler_proto protoreflect.FileDescriptor
 
 const file_scheduler_proto_rawDesc = "" +
@@ -189,9 +198,10 @@ const file_scheduler_proto_rawDesc = "" +
 	"\x14idle_timeout_seconds\x18\x06 \x01(\x02R\x12idleTimeoutSeconds\x12!\n" +
 	"\fmax_attempts\x18\a \x01(\x02R\vmaxAttempts\x12\x1c\n" +
 	"\tnamespace\x18\b \x01(\tR\tnamespace\x12'\n" +
-	"\x0ftimeout_seconds\x18\t \x01(\x02R\x0etimeoutSeconds\"*\n" +
+	"\x0ftimeout_seconds\x18\t \x01(\x02R\x0etimeoutSeconds\"B\n" +
 	"\x11CreateJobResponse\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId2l\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status2l\n" +
 	"\x10SchedulerService\x12X\n" +
 	"\tCreateJob\x12$.wardu.scheduler.v1.CreateJobRequest\x1a%.wardu.scheduler.v1.CreateJobResponseB\"Z shared/proto/scheduler;schedulerb\x06proto3"
 
@@ -207,11 +217,13 @@ func file_scheduler_proto_rawDescGZIP() []byte {
 	return file_scheduler_proto_rawDescData
 }
 
-var file_scheduler_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_scheduler_proto_goTypes = []any{
-	(*CreateJobRequest)(nil),  // 0: wardu.scheduler.v1.CreateJobRequest
-	(*CreateJobResponse)(nil), // 1: wardu.scheduler.v1.CreateJobResponse
-}
+var (
+	file_scheduler_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+	file_scheduler_proto_goTypes  = []any{
+		(*CreateJobRequest)(nil),  // 0: wardu.scheduler.v1.CreateJobRequest
+		(*CreateJobResponse)(nil), // 1: wardu.scheduler.v1.CreateJobResponse
+	}
+)
 var file_scheduler_proto_depIdxs = []int32{
 	0, // 0: wardu.scheduler.v1.SchedulerService.CreateJob:input_type -> wardu.scheduler.v1.CreateJobRequest
 	1, // 1: wardu.scheduler.v1.SchedulerService.CreateJob:output_type -> wardu.scheduler.v1.CreateJobResponse

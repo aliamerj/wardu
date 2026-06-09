@@ -42,7 +42,7 @@ func New() Service {
 			return err
 		}
 
-		return tx.AutoMigrate(&models.Namespace{})
+		return tx.AutoMigrate(&models.Namespace{}, models.Job{}, models.Worker{}, models.JobAttempt{})
 	}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}

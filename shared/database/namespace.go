@@ -1,6 +1,8 @@
 package database
 
-import "github.com/aliamerj/wardu/shared/models"
+import (
+	"github.com/aliamerj/wardu/shared/models"
+)
 
 func (s *service) CreateNamespace(ns *models.Namespace) error {
 	return s.db.Model(&models.Namespace{}).Create(ns).Error

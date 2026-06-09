@@ -23,4 +23,5 @@ message CreateJobRequest {
 
 message CreateJobResponse {
   string job_id = 1;
+  string status = 2;
 }

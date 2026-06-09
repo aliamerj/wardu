@@ -20,14 +20,14 @@ func (h *Handler) submitJob(c *echo.Context) error {
 		return withErr(c, http.StatusBadRequest)
 	}
 
-	job, err := models.BuildNewJob(req)
+	job, err := models.BuildJobProto(req)
 	if err != nil {
 		return withErr(c, http.StatusBadRequest)
 	}
 
 	res, err := h.srv.Scheduler.CreateJob(ctx, job)
 	if err != nil {
-		return withErr(c, http.StatusServiceUnavailable, "scheduler unavailable")
+		return withErr(c, http.StatusBadRequest, err.Error())
 	}
 
 	return c.JSON(http.StatusAccepted, types.SubmitJobResponse{

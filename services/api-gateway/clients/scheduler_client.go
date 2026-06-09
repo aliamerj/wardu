@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/aliamerj/wardu/shared/env"
-	"github.com/aliamerj/wardu/shared/models"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -31,8 +30,8 @@ func newScheduler() (*schedulerClient, error) {
 	}, nil
 }
 
-func (s *schedulerClient) CreateJob(ctx context.Context, job *models.Job) (*pb.CreateJobResponse, error) {
-	return s.client.CreateJob(ctx, job.ToProto())
+func (s *schedulerClient) CreateJob(ctx context.Context, job *pb.CreateJobRequest) (*pb.CreateJobResponse, error) {
+	return s.client.CreateJob(ctx, job)
 }
 
 func (s *schedulerClient) close() error {

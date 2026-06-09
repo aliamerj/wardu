@@ -2,31 +2,47 @@ package models
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/aliamerj/wardu/services/api-gateway/types"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
 )
 
+type status string
+
+const (
+	StatusPending   status = "pending"
+	StatusReady     status = "ready"
+	StatusRunning   status = "running"
+	StatusSucceeded status = "succeeded"
+	StatusFailed    status = "failed"
+	StatusDead      status = "dead"
+	StatusCancelled status = "cancelled"
+)
+
 type Job struct {
-	ID                 string   `gorm:"primaryKey;type:varchar(255)"`
-	Payload            []byte   `gorm:"type:bytea"`
-	Priority           int64    `gorm:"not null;default:0"`
-	Autorun            bool     `gorm:"not null;default:false"`
-	Entrypoint         []string `gorm:"serializer:json"`
+	ID         string   `gorm:"primaryKey;type:varchar(255)"`
+	WorkerID   string   `gorm:"type:uuid;not null;index"`
+	Namespace  string   `gorm:"type:uuid;not null;index"`
+	Status     status   `gorm:"type:varchar(255);not null;default:pending"`
+	Autorun    bool     `gorm:"not null;default:false"`
+	Entrypoint []string `gorm:"serializer:json"`
+	Payload    []byte   `gorm:"type:bytea"`
+
 	IdleTimeoutSeconds float32
-	Image              string `gorm:"not null"`
 	MaxAttempts        float32
-	Namespace          string `gorm:"index"`
 	TimeoutSeconds     float32
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
-func BuildNewJob(jobReq types.SubmitJobRequest) (*Job, error) {
+func BuildJobProto(jobReq types.SubmitJobRequest) (*pb.CreateJobRequest, error) {
 	payload, err := json.Marshal(jobReq.Payload)
 	if err != nil {
 		return nil, err
 	}
 
-	job := Job{
+	job := pb.CreateJobRequest{
 		Image:   jobReq.Image,
 		Payload: payload,
 	}
@@ -66,16 +82,14 @@ func BuildNewJob(jobReq types.SubmitJobRequest) (*Job, error) {
 	return &job, nil
 }
 
-func (j *Job) ToProto() *pb.CreateJobRequest {
-	return &pb.CreateJobRequest{
-		Image:              j.Image,
-		Payload:            j.Payload,
-		Priority:           j.Priority,
-		Autorun:            j.Autorun,
-		Entrypoint:         j.Entrypoint,
-		IdleTimeoutSeconds: j.IdleTimeoutSeconds,
-		MaxAttempts:        j.MaxAttempts,
-		Namespace:          j.Namespace,
-		TimeoutSeconds:     j.TimeoutSeconds,
+func BuildJobFromProto(proto *pb.CreateJobRequest) *Job {
+	return &Job{
+		Payload:            proto.GetPayload(),
+		Autorun:            proto.GetAutorun(),
+		Entrypoint:         proto.GetEntrypoint(),
+		IdleTimeoutSeconds: proto.GetIdleTimeoutSeconds(),
+		MaxAttempts:        proto.GetMaxAttempts(),
+		Namespace:          proto.GetNamespace(),
+		TimeoutSeconds:     proto.GetTimeoutSeconds(),
 	}
 }

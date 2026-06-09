@@ -17,6 +17,10 @@ type Service interface {
 	GetAllNamespaces() ([]*models.Namespace, error)
 	GetNamespaceByName(name string) (*models.Namespace, error)
 	UpdateNamespace(name string, newNS models.Namespace) (*models.Namespace, error)
+	GetWorkerByImage(image string) (*models.Worker, error)
+	CreateJob(job *models.Job) error
+	CreateWorker(worker *models.Worker) error
+	UpdateWorker(worker *models.Worker) error
 }
 
 func (s *service) Health() map[string]string {
