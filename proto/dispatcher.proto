@@ -1,0 +1,25 @@
+
+syntax = "proto3";
+
+package wardu.dispatcher.v1;
+
+option go_package = "shared/proto/dispatcher;dispatcher";
+
+service DispatcherService {
+  rpc RunJob(RunJobRequest) returns (RunJobResponse);
+}
+
+message RunJobRequest {
+ string job_id = 1;
+ optional bytes payload = 2;
+ optional int64 priority = 3;
+ repeated string entrypoint = 4;
+ optional  float idle_timeout_seconds = 5;
+ optional  float max_attempts = 6;
+ optional  float timeout_seconds = 7;
+}
+
+message RunJobResponse {
+  string job_id = 1;
+  string status = 2;
+}

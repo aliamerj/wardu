@@ -24,6 +24,44 @@ k8s_resource(
   )
 
 #############
+### dispatcher
+#############
+k8s_yaml("./infra/development/k8s/dispatcher-deployment.yaml")
+dispatcher_compile_cmd = 'make build-dispatcher'
+local_resource(
+  'dispatcher_compile', 
+  dispatcher_compile_cmd,
+  deps=[
+  "./services/dispatcher",
+  "./shared",
+  ],
+  labels=["compile"]
+  )
+# build Docker
+docker_build_with_restart(
+'wardu/dispatcher-service',
+'.',
+dockerfile='./infra/development/docker/dispatcher-service.Dockerfile',
+  entrypoint=['/app/dispatcher'],
+  only=['./build/dispatcher'],
+  live_update=[
+      sync('./build/dispatcher', '/app/dispatcher'),
+    ],
+)
+
+# Kubernetes Resource
+
+k8s_resource(
+    'dispatcher-service',
+    port_forwards=['8082:8082'],
+    resource_deps=[
+      'dispatcher_compile',
+       'postgres',
+    ],
+    labels=['services'],
+)
+
+#############
 ### scheduler
 #############
 k8s_yaml("./infra/development/k8s/scheduler-deployment.yaml")

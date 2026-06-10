@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dispatcher-service
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dispatcher-service
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dispatcher-service
+subjects:
+  - kind: ServiceAccount
+    name: dispatcher-service
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dispatcher-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcher-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dispatcher-service
+  template:
+    metadata:
+      labels:
+        app: dispatcher-service
+    spec:
+      serviceAccountName: dispatcher-service
+      containers:
+        - name: dispatcher-service
+          image: wardu/dispatcher-service:v1
+          ports:
+            - containerPort: 8082
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: uri
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatcher-service
+spec:
+  selector:
+    app: dispatcher-service
+  ports:
+    - port: 8082
+      name: grpc
+      targetPort: 8082
+  type: ClusterIP

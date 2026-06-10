@@ -91,6 +91,52 @@ func (r *RabbitMQ) PublishJob(
 	)
 }
 
+func (r *RabbitMQ) ConsumeJobs(ctx context.Context, handler func(JobMessage) error) error {
+	msgs, err := r.ch.ConsumeWithContext(
+		ctx,
+		JobsQueue,
+		"",
+		false, // manual ack
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case msg := <-msgs:
+			var jobMsg JobMessage
+			if err := json.Unmarshal(msg.Body, &jobMsg); err != nil {
+				if err = msg.Nack(
+					false,
+					false,
+				); err != nil {
+					zlog.Error().Err(err).Msg("failed to nack")
+				}
+
+				zlog.Error().Err(err).Msg("failed to parse job message")
+				continue
+			}
+			if err := handler(jobMsg); err != nil {
+				_ = msg.Nack(
+					false,
+					true,
+				)
+				zlog.Error().Err(err).Str("Job_id", jobMsg.JobID).Msg("failed to handle job")
+				continue
+			}
+			if err := msg.Ack(false); err != nil {
+				zlog.Error().Err(err).Str("Job_id", jobMsg.JobID).Msg("failed to Ack job")
+			}
+		}
+	}
+}
+
 func (r *RabbitMQ) setup() error {
 	if err := r.ch.ExchangeDeclare(
 		JobsExchange,

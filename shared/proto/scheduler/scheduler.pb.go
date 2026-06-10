@@ -7,12 +7,11 @@
 package scheduler
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -217,13 +216,11 @@ func file_scheduler_proto_rawDescGZIP() []byte {
 	return file_scheduler_proto_rawDescData
 }
 
-var (
-	file_scheduler_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-	file_scheduler_proto_goTypes  = []any{
-		(*CreateJobRequest)(nil),  // 0: wardu.scheduler.v1.CreateJobRequest
-		(*CreateJobResponse)(nil), // 1: wardu.scheduler.v1.CreateJobResponse
-	}
-)
+var file_scheduler_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_scheduler_proto_goTypes = []any{
+	(*CreateJobRequest)(nil),  // 0: wardu.scheduler.v1.CreateJobRequest
+	(*CreateJobResponse)(nil), // 1: wardu.scheduler.v1.CreateJobResponse
+}
 var file_scheduler_proto_depIdxs = []int32{
 	0, // 0: wardu.scheduler.v1.SchedulerService.CreateJob:input_type -> wardu.scheduler.v1.CreateJobRequest
 	1, // 1: wardu.scheduler.v1.SchedulerService.CreateJob:output_type -> wardu.scheduler.v1.CreateJobResponse
