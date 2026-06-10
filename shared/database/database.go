@@ -2,15 +2,14 @@ package database
 
 import (
 	"fmt"
-	"log"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/aliamerj/wardu/shared/env"
 	"github.com/aliamerj/wardu/shared/models"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
+	zlog "github.com/rs/zerolog/log"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type service struct {
@@ -27,14 +26,16 @@ var (
 )
 
 func New() Service {
-	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
+
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, username, password, database, port)
+	zlog.Info().Str("host", host).Str("port", port).Str("database", database).Msg("connecting to postgres")
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		zlog.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -44,10 +45,10 @@ func New() Service {
 
 		return tx.AutoMigrate(&models.Namespace{}, models.Job{}, models.Worker{}, models.JobAttempt{})
 	}); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+		zlog.Fatal().Err(err).Msg("failed to migrate database")
 	}
-	dbInstance = &service{
-		db: db,
-	}
+
+	dbInstance = &service{db: db}
+	zlog.Info().Msg("database initialized")
 	return dbInstance
 }

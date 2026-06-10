@@ -2,66 +2,60 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/aliamerj/wardu/services/api-gateway/clients"
-	"github.com/aliamerj/wardu/services/api-gateway/server"
+	serverpkg "github.com/aliamerj/wardu/services/api-gateway/server"
+	"github.com/aliamerj/wardu/shared/logger"
+	"github.com/rs/zerolog"
 )
 
 func main() {
+	log := logger.Setup("api-gateway")
+	log.Info().Msg("starting api gateway")
+
 	srv, err := clients.NewServices()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("failed to initialize api gateway clients")
 	}
 
-	server := server.NewServer(srv)
+	httpServer := serverpkg.NewServer(srv)
+	log.Info().Str("addr", httpServer.Addr).Msg("api gateway server listening")
+	done := make(chan struct{}, 1)
 
-	// Create a done channel to signal when the shutdown is complete
-	done := make(chan bool, 1)
+	go gracefulShutdown(log, httpServer, done)
 
-	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, done)
-
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		panic(fmt.Sprintf("http server error: %s", err))
+	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal().Err(err).Msg("http server stopped unexpectedly")
 	}
 
-	// Wait for the graceful shutdown to complete
 	<-done
 
 	if err := srv.CloseAll(); err != nil {
-		log.Printf("error closing services: %v", err)
+		log.Error().Err(err).Msg("failed to close client connections")
 	}
 
-	log.Println("Graceful shutdown complete.")
+	log.Info().Msg("api gateway exited cleanly")
 }
 
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
-	// Create context that listens for the interrupt signal from the OS.
+func gracefulShutdown(log zerolog.Logger, apiServer *http.Server, done chan<- struct{}) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Listen for the interrupt signal.
 	<-ctx.Done()
+	log.Info().Msg("shutdown signal received, stopping api gateway")
+	stop()
 
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
-	stop() // Allow Ctrl+C to force shutdown
-
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown with error: %v", err)
+
+	if err := apiServer.Shutdown(shutdownCtx); err != nil {
+		log.Error().Err(err).Msg("api gateway shutdown failed")
 	}
 
-	log.Println("Server exiting")
-
-	// Notify the main goroutine that the shutdown is complete
-	done <- true
+	log.Info().Msg("api gateway shutdown complete")
+	done <- struct{}{}
 }

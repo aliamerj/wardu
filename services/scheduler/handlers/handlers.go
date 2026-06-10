@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/aliamerj/wardu/shared/database"
@@ -13,6 +12,7 @@ import (
 	"github.com/aliamerj/wardu/shared/models"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
 	"github.com/oklog/ulid/v2"
+	zlog "github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +28,7 @@ func New(db database.Service, k8s *k8s.Client) *Handler {
 	}
 
 	if err := h.createDefualtNamespace(); err != nil {
-		log.Fatalf("failed to create defualt Namespace: %s", err.Error())
+		zlog.Fatal().Err(err).Msg("failed to bootstrap default namespace")
 	}
 
 	return h
@@ -38,95 +38,93 @@ func (h *Handler) CreateJob(
 	ctx context.Context,
 	req *pb.CreateJobRequest,
 ) (string, error) {
+	started := time.Now()
 	job := models.BuildJobFromProto(req)
 	job.ID = newJobID()
+
+	zlog.Info().
+		Str("job_id", job.ID).
+		Str("namespace", job.Namespace).
+		Str("image", req.GetImage()).
+		Msg("received job creation request")
 
 	ns, err := h.db.GetNamespaceByName(job.Namespace)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn().
+				Str("job_id", job.ID).
+				Str("namespace", job.Namespace).
+				Msg("job namespace not found")
 			return "", fmt.Errorf(
 				"namespace %s not found, please create the namespace or use default wardu",
 				job.Namespace,
 			)
 		}
 
+		zlog.Error().Err(err).Str("job_id", job.ID).Msg("failed to load namespace from database")
 		return "", err
 	}
 
 	exists, err := h.k8s.CheckNamespaceByDNS(ctx, ns.DNS)
 	if err != nil {
+		zlog.Error().Err(err).Str("job_id", job.ID).Str("namespace", ns.Name).Msg("failed to check namespace in kubernetes")
 		return "", err
 	}
 
 	if !exists {
-		log.Printf("namespace %s missing in k8s", ns.Name)
+		zlog.Info().Str("job_id", job.ID).Str("namespace", ns.Name).Msg("namespace missing in kubernetes, creating")
 
-		if _, err := h.k8s.CreateNamespace(
-			ctx,
-			ns.Name,
-			ns,
-		); err != nil {
+		if _, err := h.k8s.CreateNamespace(ctx, ns.Name, ns); err != nil {
+			zlog.Error().Err(err).Str("job_id", job.ID).Str("namespace", ns.Name).Msg("failed to create kubernetes namespace")
 			return "", err
 		}
 	}
 
 	worker, err := h.db.GetWorkerByImage(req.GetImage())
 	if err != nil {
-
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Error().Err(err).Str("job_id", job.ID).Str("image", req.GetImage()).Msg("failed to load worker from database")
 			return "", err
 		}
 
-		log.Printf(
-			"worker for image %s not found, creating",
-			req.GetImage(),
-		)
+		zlog.Info().
+			Str("job_id", job.ID).
+			Str("image", req.GetImage()).
+			Msg("worker not found, creating new worker")
 
-		worker, err = h.k8s.CreateWorker(
-			ctx,
-			ns,
-			job,
-			req.GetImage(),
-		)
+		worker, err = h.k8s.CreateWorker(ctx, ns, job, req.GetImage())
 		if err != nil {
+			zlog.Error().Err(err).Str("job_id", job.ID).Str("image", req.GetImage()).Msg("failed to create worker in kubernetes")
 			return "", err
 		}
 
 		if err := h.db.CreateWorker(worker); err != nil {
+			zlog.Error().Err(err).Str("job_id", job.ID).Str("image", req.GetImage()).Msg("failed to persist worker")
 			return "", err
 		}
 	} else {
-
-		exists, err := h.k8s.CheckWorker(
-			ctx,
-			ns.DNS,
-			worker.K8sDeploymentName,
-		)
+		exists, err := h.k8s.CheckWorker(ctx, ns.DNS, worker.K8sDeploymentName)
 		if err != nil {
+			zlog.Error().Err(err).Str("job_id", job.ID).Str("worker", worker.K8sDeploymentName).Msg("failed to check worker in kubernetes")
 			return "", err
 		}
 
 		if !exists {
+			zlog.Info().
+				Str("job_id", job.ID).
+				Str("worker", worker.K8sDeploymentName).
+				Msg("worker deployment missing in kubernetes, recreating")
 
-			log.Printf(
-				"worker deployment %s missing in k8s, recreating",
-				worker.K8sDeploymentName,
-			)
-
-			newWorker, err := h.k8s.CreateWorker(
-				ctx,
-				ns,
-				job,
-				req.GetImage(),
-			)
+			newWorker, err := h.k8s.CreateWorker(ctx, ns, job, req.GetImage())
 			if err != nil {
+				zlog.Error().Err(err).Str("job_id", job.ID).Str("image", req.GetImage()).Msg("failed to recreate worker in kubernetes")
 				return "", err
 			}
 
-			// keep existing DB record
 			worker.K8sDeploymentName = newWorker.K8sDeploymentName
 
 			if err := h.db.UpdateWorker(worker); err != nil {
+				zlog.Error().Err(err).Str("job_id", job.ID).Str("image", req.GetImage()).Msg("failed to update worker deployment name")
 				return "", err
 			}
 		}
@@ -135,13 +133,15 @@ func (h *Handler) CreateJob(
 	job.WorkerID = worker.ID
 
 	if err := h.db.CreateJob(job); err != nil {
+		zlog.Error().Err(err).Str("job_id", job.ID).Str("worker_id", job.WorkerID).Msg("failed to persist job")
 		return "", err
 	}
 
-	// TODO:
-	// if job.Autorun {
-	//     publish to rabbitmq
-	// }
+	zlog.Info().
+		Str("job_id", job.ID).
+		Str("worker_id", job.WorkerID).
+		Dur("latency", time.Since(started)).
+		Msg("job created successfully")
 
 	return job.ID, nil
 }
@@ -171,11 +171,7 @@ func (h *Handler) createDefualtNamespace() error {
 			return err
 		}
 		if !exist {
-			log.Printf(
-				"namespace %s missing in k8s\n",
-				ns.DNS,
-			)
-			log.Printf("creating namespace %s in k8s", ns.Name)
+			zlog.Warn().Str("namespace", ns.Name).Str("dns", ns.DNS).Msg("namespace missing in kubernetes, recreating")
 
 			if _, err := h.k8s.CreateNamespace(ctx, ns.Name, ns); err != nil {
 				return err
@@ -187,10 +183,16 @@ func (h *Handler) createDefualtNamespace() error {
 		return nil
 	}
 
+	zlog.Info().Msg("bootstrapping default wardu namespace")
 	ns, err := h.k8s.CreateNamespace(ctx, "wardu", nil)
 	if err != nil {
 		return err
 	}
 
-	return h.db.CreateNamespace(ns)
+	if err := h.db.CreateNamespace(ns); err != nil {
+		return err
+	}
+
+	zlog.Info().Str("namespace", ns.Name).Msg("default namespace bootstrapped")
+	return nil
 }

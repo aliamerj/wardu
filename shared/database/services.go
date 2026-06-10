@@ -3,11 +3,11 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/aliamerj/wardu/shared/models"
+	zlog "github.com/rs/zerolog/log"
 )
 
 type Service interface {
@@ -33,21 +33,19 @@ func (s *service) Health() map[string]string {
 	sqlDB, err := s.db.DB()
 	if err != nil {
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Printf("Failed to get sql.DB:%s", err.Error())
-		return stats
-	}
-	// Ping the database
-	if err := sqlDB.PingContext(ctx); err != nil {
-		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Printf("db down: %v", err)
+		zlog.Error().Err(err).Msg("failed to get sql.DB handle")
 		return stats
 	}
 
-	// Database is up, add more statistics
+	if err := sqlDB.PingContext(ctx); err != nil {
+		stats["error"] = fmt.Sprintf("db down: %v", err)
+		zlog.Error().Err(err).Msg("database health check failed")
+		return stats
+	}
+
 	stats["status"] = "up"
 	stats["message"] = "It's healthy"
 
-	// Get database stats (like open connections, in use, idle, etc.)
 	dbStats := sqlDB.Stats()
 	stats["open_connections"] = strconv.Itoa(dbStats.OpenConnections)
 	stats["in_use"] = strconv.Itoa(dbStats.InUse)
@@ -57,8 +55,19 @@ func (s *service) Health() map[string]string {
 	stats["max_idle_closed"] = strconv.FormatInt(dbStats.MaxIdleClosed, 10)
 	stats["max_lifetime_closed"] = strconv.FormatInt(dbStats.MaxLifetimeClosed, 10)
 
-	// Evaluate stats to provide a health message
-	if dbStats.OpenConnections > 40 { // Assuming 50 is the max for this example
+	if dbStats.OpenConnections > 40 || dbStats.WaitCount > 1000 || dbStats.MaxIdleClosed > int64(dbStats.OpenConnections)/2 || dbStats.MaxLifetimeClosed > int64(dbStats.OpenConnections)/2 {
+		zlog.Warn().
+			Int("open_connections", dbStats.OpenConnections).
+			Int("in_use", dbStats.InUse).
+			Int("idle", dbStats.Idle).
+			Int64("wait_count", dbStats.WaitCount).
+			Dur("wait_duration", dbStats.WaitDuration).
+			Int64("max_idle_closed", dbStats.MaxIdleClosed).
+			Int64("max_lifetime_closed", dbStats.MaxLifetimeClosed).
+			Msg("database health check indicates pressure")
+	}
+
+	if dbStats.OpenConnections > 40 {
 		stats["message"] = "The database is experiencing heavy load."
 	}
 

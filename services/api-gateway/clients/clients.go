@@ -1,20 +1,23 @@
 package clients
 
-import "fmt"
+import (
+	"fmt"
+
+	zlog "github.com/rs/zerolog/log"
+)
 
 type Services struct {
 	Scheduler *schedulerClient
 }
 
 func NewServices() (*Services, error) {
-	sheduler, err := newScheduler()
+	scheduler, err := newScheduler()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Services{
-		Scheduler: sheduler,
-	}, nil
+	zlog.Info().Msg("api gateway service clients initialized")
+	return &Services{Scheduler: scheduler}, nil
 }
 
 func (s *Services) CloseAll() error {

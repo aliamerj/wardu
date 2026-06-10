@@ -7,6 +7,7 @@ import (
 	"github.com/aliamerj/wardu/shared/database"
 	"github.com/aliamerj/wardu/shared/k8s"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
+	zlog "github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
 
@@ -20,6 +21,7 @@ func NewGrpc(server *grpc.Server) *gRPCServer {
 		h: handlers.New(database.New(), k8s.New()),
 	}
 	pb.RegisterSchedulerServiceServer(server, srv)
+	zlog.Info().Msg("registered scheduler gRPC service")
 	return srv
 }
 
