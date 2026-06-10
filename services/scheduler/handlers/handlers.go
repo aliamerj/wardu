@@ -11,20 +11,23 @@ import (
 	"github.com/aliamerj/wardu/shared/k8s"
 	"github.com/aliamerj/wardu/shared/models"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
+	r "github.com/aliamerj/wardu/shared/rabbitmq"
 	"github.com/oklog/ulid/v2"
 	zlog "github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
 type Handler struct {
-	db  database.Service
-	k8s *k8s.Client
+	db       database.Service
+	k8s      *k8s.Client
+	rabbitmq *r.RabbitMQ
 }
 
-func New(db database.Service, k8s *k8s.Client) *Handler {
+func New(db database.Service, k8s *k8s.Client, rabbitmq *r.RabbitMQ) *Handler {
 	h := &Handler{
-		db:  db,
-		k8s: k8s,
+		db:       db,
+		k8s:      k8s,
+		rabbitmq: rabbitmq,
 	}
 
 	if err := h.createDefualtNamespace(); err != nil {
@@ -142,6 +145,19 @@ func (h *Handler) CreateJob(
 		Str("worker_id", job.WorkerID).
 		Dur("latency", time.Since(started)).
 		Msg("job created successfully")
+
+	if job.Autorun {
+		if err := h.rabbitmq.PublishJob(ctx, r.JobMessage{
+			JobID:    job.ID,
+			Image:    req.GetImage(),
+			Priority: req.GetPriority(),
+			Attempt:  1,
+		}); err != nil {
+			zlog.Error().Err(err).Str("job_id", job.ID).Msg("failed to publish job to RabbitMQ")
+			return "", err
+		}
+		zlog.Info().Str("job_id", job.ID).Msg("job successfully queued")
+	}
 
 	return job.ID, nil
 }
