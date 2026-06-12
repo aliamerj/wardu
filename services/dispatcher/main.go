@@ -51,9 +51,9 @@ func main() {
 		),
 	)
 
-	srv := server.NewGrpc(grpc, rabbitmq)
+	srv := server.NewGrpc(ctx, grpc, rabbitmq)
 
-	go srv.StartJobConsumer(ctx)
+	go srv.StartJobConsumer()
 
 	go gracefulShutdown(
 		ctx,

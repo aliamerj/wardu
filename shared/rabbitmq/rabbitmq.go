@@ -18,10 +18,18 @@ const (
 )
 
 type JobMessage struct {
-	JobID    string `json:"job_id"`
-	Attempt  int    `json:"attempt"`
-	Image    string `json:"image"`
-	Priority int64  `json:"priority"`
+	JobID     string        `json:"job_id"`
+	Attempt   int           `json:"attempt"`
+	Priority  int64         `json:"priority"`
+	Overrides *JobOverrides `json:"overrides,omitempty"`
+}
+
+type JobOverrides struct {
+	Payload            []byte   `json:"payload,omitempty"`
+	Entrypoint         []string `json:"entrypoint,omitempty"`
+	IdleTimeoutSeconds *float32 `json:"idle_timeout_seconds,omitempty"`
+	MaxAttempts        *float32 `json:"max_attempts,omitempty"`
+	TimeoutSeconds     *float32 `json:"timeout_seconds,omitempty"`
 }
 
 type RabbitMQ struct {
@@ -138,6 +146,10 @@ func (r *RabbitMQ) ConsumeJobs(ctx context.Context, handler func(JobMessage) err
 }
 
 func (r *RabbitMQ) setup() error {
+	if err := r.ch.Qos(env.GetInt("MAX_WORKERS", 20), 0, false); err != nil {
+		return err
+	}
+
 	if err := r.ch.ExchangeDeclare(
 		JobsExchange,
 		"direct",

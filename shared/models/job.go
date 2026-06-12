@@ -6,25 +6,15 @@ import (
 
 	"github.com/aliamerj/wardu/services/api-gateway/types"
 	pb "github.com/aliamerj/wardu/shared/proto/scheduler"
-)
-
-type status string
-
-const (
-	StatusPending   status = "pending"
-	StatusReady     status = "ready"
-	StatusRunning   status = "running"
-	StatusSucceeded status = "succeeded"
-	StatusFailed    status = "failed"
-	StatusDead      status = "dead"
-	StatusCancelled status = "cancelled"
+	r "github.com/aliamerj/wardu/shared/rabbitmq"
 )
 
 type Job struct {
-	ID         string   `gorm:"primaryKey;type:varchar(255)"`
-	WorkerID   string   `gorm:"type:uuid;not null;index"`
+	ID       string `gorm:"primaryKey;type:varchar(255)"`
+	WorkerID string `gorm:"type:uuid;not null;index"`
+	Worker   Worker `gorm:"foreignKey:WorkerID"`
+
 	Namespace  string   `gorm:"type:uuid;not null;index"`
-	Status     status   `gorm:"type:varchar(255);not null;default:pending"`
 	Autorun    bool     `gorm:"not null;default:false"`
 	Entrypoint []string `gorm:"serializer:json"`
 	Payload    []byte   `gorm:"type:bytea"`
@@ -91,5 +81,33 @@ func BuildJobFromProto(proto *pb.CreateJobRequest) *Job {
 		MaxAttempts:        proto.GetMaxAttempts(),
 		Namespace:          proto.GetNamespace(),
 		TimeoutSeconds:     proto.GetTimeoutSeconds(),
+	}
+}
+
+func (j *Job) ApplyOverrides(
+	ops *r.JobOverrides,
+) {
+	if ops == nil {
+		return
+	}
+
+	if len(ops.Payload) > 0 {
+		j.Payload = ops.Payload
+	}
+
+	if len(ops.Entrypoint) > 0 {
+		j.Entrypoint = ops.Entrypoint
+	}
+
+	if ops.TimeoutSeconds != nil {
+		j.TimeoutSeconds = *ops.TimeoutSeconds
+	}
+
+	if ops.MaxAttempts != nil {
+		j.MaxAttempts = *ops.MaxAttempts
+	}
+
+	if ops.IdleTimeoutSeconds != nil {
+		j.IdleTimeoutSeconds = *ops.IdleTimeoutSeconds
 	}
 }

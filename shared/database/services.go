@@ -12,15 +12,23 @@ import (
 
 type Service interface {
 	Health() map[string]string
+
 	CreateNamespace(ns *models.Namespace) error
 	DeleteNamespace(name string) error
 	GetAllNamespaces() ([]*models.Namespace, error)
 	GetNamespaceByName(name string) (*models.Namespace, error)
 	UpdateNamespace(name string, newNS models.Namespace) (*models.Namespace, error)
+
 	GetWorkerByImage(image string) (*models.Worker, error)
-	CreateJob(job *models.Job) error
 	CreateWorker(worker *models.Worker) error
 	UpdateWorker(worker *models.Worker) error
+
+	CreateJob(job *models.Job) error
+	GetJobByID(jobId string) (*models.Job, error)
+	GetJobForExecution(id string) (*models.Job, error)
+
+	CreateJobAttempt(jt *models.JobAttempt) error
+	UpdateJobAttempt(jt *models.JobAttempt) (*models.JobAttempt, error)
 }
 
 func (s *service) Health() map[string]string {
