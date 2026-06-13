@@ -84,9 +84,17 @@ func (g *gRPCServer) executeJob(
 		return err
 	}
 
-	// TODO:
-	// 1. Run Job
-	// 2. save result in job attempt and update status
+	pod, err := g.k8s.SelectPod(g.ctx, job)
+	if err != nil {
+		// TODO: Add Logs
+		return err
+	}
+	zlog.Info().
+		Str("job_id", job.ID).
+		Str("pod", pod.Name).
+		Msg("worker pod selected")
+
+		// TODO runtime starting job
 
 	return nil
 }

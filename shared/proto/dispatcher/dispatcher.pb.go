@@ -21,6 +21,64 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ExecutionStatus int32
+
+const (
+	ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED ExecutionStatus = 0
+	ExecutionStatus_EXECUTION_STATUS_PENDING     ExecutionStatus = 1
+	ExecutionStatus_EXECUTION_STATUS_RUNNING     ExecutionStatus = 2
+	ExecutionStatus_EXECUTION_STATUS_SUCCEEDED   ExecutionStatus = 3
+	ExecutionStatus_EXECUTION_STATUS_FAILED      ExecutionStatus = 4
+	ExecutionStatus_EXECUTION_STATUS_CANCELLED   ExecutionStatus = 5
+)
+
+// Enum value maps for ExecutionStatus.
+var (
+	ExecutionStatus_name = map[int32]string{
+		0: "EXECUTION_STATUS_UNSPECIFIED",
+		1: "EXECUTION_STATUS_PENDING",
+		2: "EXECUTION_STATUS_RUNNING",
+		3: "EXECUTION_STATUS_SUCCEEDED",
+		4: "EXECUTION_STATUS_FAILED",
+		5: "EXECUTION_STATUS_CANCELLED",
+	}
+	ExecutionStatus_value = map[string]int32{
+		"EXECUTION_STATUS_UNSPECIFIED": 0,
+		"EXECUTION_STATUS_PENDING":     1,
+		"EXECUTION_STATUS_RUNNING":     2,
+		"EXECUTION_STATUS_SUCCEEDED":   3,
+		"EXECUTION_STATUS_FAILED":      4,
+		"EXECUTION_STATUS_CANCELLED":   5,
+	}
+)
+
+func (x ExecutionStatus) Enum() *ExecutionStatus {
+	p := new(ExecutionStatus)
+	*p = x
+	return p
+}
+
+func (x ExecutionStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_dispatcher_proto_enumTypes[0].Descriptor()
+}
+
+func (ExecutionStatus) Type() protoreflect.EnumType {
+	return &file_dispatcher_proto_enumTypes[0]
+}
+
+func (x ExecutionStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExecutionStatus.Descriptor instead.
+func (ExecutionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_dispatcher_proto_rawDescGZIP(), []int{0}
+}
+
 type RunJobRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	JobId              string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
@@ -165,6 +223,134 @@ func (x *RunJobResponse) GetStatus() string {
 	return ""
 }
 
+type HeartbeatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	AttemptId     string                 `protobuf:"bytes,3,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	Status        ExecutionStatus        `protobuf:"varint,4,opt,name=status,proto3,enum=wardu.dispatcher.v1.ExecutionStatus" json:"status,omitempty"`
+	Pid           int64                  `protobuf:"varint,5,opt,name=pid,proto3" json:"pid,omitempty"`
+	UnixTime      int64                  `protobuf:"varint,6,opt,name=unix_time,json=unixTime,proto3" json:"unix_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatRequest) Reset() {
+	*x = HeartbeatRequest{}
+	mi := &file_dispatcher_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatRequest) ProtoMessage() {}
+
+func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dispatcher_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
+func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
+	return file_dispatcher_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *HeartbeatRequest) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetStatus() ExecutionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED
+}
+
+func (x *HeartbeatRequest) GetPid() int64 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
+}
+
+func (x *HeartbeatRequest) GetUnixTime() int64 {
+	if x != nil {
+		return x.UnixTime
+	}
+	return 0
+}
+
+type HeartbeatResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Accepted      bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatResponse) Reset() {
+	*x = HeartbeatResponse{}
+	mi := &file_dispatcher_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatResponse) ProtoMessage() {}
+
+func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dispatcher_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
+func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
+	return file_dispatcher_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *HeartbeatResponse) GetAccepted() bool {
+	if x != nil {
+		return x.Accepted
+	}
+	return false
+}
+
 var File_dispatcher_proto protoreflect.FileDescriptor
 
 const file_dispatcher_proto_rawDesc = "" +
@@ -188,9 +374,27 @@ const file_dispatcher_proto_rawDesc = "" +
 	"\x10_timeout_seconds\"?\n" +
 	"\x0eRunJobResponse\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status2f\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"\xd8\x01\n" +
+	"\x10HeartbeatRequest\x12!\n" +
+	"\fexecution_id\x18\x01 \x01(\tR\vexecutionId\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x03 \x01(\tR\tattemptId\x12<\n" +
+	"\x06status\x18\x04 \x01(\x0e2$.wardu.dispatcher.v1.ExecutionStatusR\x06status\x12\x10\n" +
+	"\x03pid\x18\x05 \x01(\x03R\x03pid\x12\x1b\n" +
+	"\tunix_time\x18\x06 \x01(\x03R\bunixTime\"/\n" +
+	"\x11HeartbeatResponse\x12\x1a\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted*\xcc\x01\n" +
+	"\x0fExecutionStatus\x12 \n" +
+	"\x1cEXECUTION_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18EXECUTION_STATUS_PENDING\x10\x01\x12\x1c\n" +
+	"\x18EXECUTION_STATUS_RUNNING\x10\x02\x12\x1e\n" +
+	"\x1aEXECUTION_STATUS_SUCCEEDED\x10\x03\x12\x1b\n" +
+	"\x17EXECUTION_STATUS_FAILED\x10\x04\x12\x1e\n" +
+	"\x1aEXECUTION_STATUS_CANCELLED\x10\x052\xc4\x01\n" +
 	"\x11DispatcherService\x12Q\n" +
-	"\x06RunJob\x12\".wardu.dispatcher.v1.RunJobRequest\x1a#.wardu.dispatcher.v1.RunJobResponseB$Z\"shared/proto/dispatcher;dispatcherb\x06proto3"
+	"\x06RunJob\x12\".wardu.dispatcher.v1.RunJobRequest\x1a#.wardu.dispatcher.v1.RunJobResponse\x12\\\n" +
+	"\tHeartbeat\x12%.wardu.dispatcher.v1.HeartbeatRequest\x1a&.wardu.dispatcher.v1.HeartbeatResponse(\x01B$Z\"shared/proto/dispatcher;dispatcherb\x06proto3"
 
 var (
 	file_dispatcher_proto_rawDescOnce sync.Once
@@ -204,19 +408,26 @@ func file_dispatcher_proto_rawDescGZIP() []byte {
 	return file_dispatcher_proto_rawDescData
 }
 
-var file_dispatcher_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_dispatcher_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_dispatcher_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_dispatcher_proto_goTypes = []any{
-	(*RunJobRequest)(nil),  // 0: wardu.dispatcher.v1.RunJobRequest
-	(*RunJobResponse)(nil), // 1: wardu.dispatcher.v1.RunJobResponse
+	(ExecutionStatus)(0),      // 0: wardu.dispatcher.v1.ExecutionStatus
+	(*RunJobRequest)(nil),     // 1: wardu.dispatcher.v1.RunJobRequest
+	(*RunJobResponse)(nil),    // 2: wardu.dispatcher.v1.RunJobResponse
+	(*HeartbeatRequest)(nil),  // 3: wardu.dispatcher.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil), // 4: wardu.dispatcher.v1.HeartbeatResponse
 }
 var file_dispatcher_proto_depIdxs = []int32{
-	0, // 0: wardu.dispatcher.v1.DispatcherService.RunJob:input_type -> wardu.dispatcher.v1.RunJobRequest
-	1, // 1: wardu.dispatcher.v1.DispatcherService.RunJob:output_type -> wardu.dispatcher.v1.RunJobResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: wardu.dispatcher.v1.HeartbeatRequest.status:type_name -> wardu.dispatcher.v1.ExecutionStatus
+	1, // 1: wardu.dispatcher.v1.DispatcherService.RunJob:input_type -> wardu.dispatcher.v1.RunJobRequest
+	3, // 2: wardu.dispatcher.v1.DispatcherService.Heartbeat:input_type -> wardu.dispatcher.v1.HeartbeatRequest
+	2, // 3: wardu.dispatcher.v1.DispatcherService.RunJob:output_type -> wardu.dispatcher.v1.RunJobResponse
+	4, // 4: wardu.dispatcher.v1.DispatcherService.Heartbeat:output_type -> wardu.dispatcher.v1.HeartbeatResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_dispatcher_proto_init() }
@@ -230,13 +441,14 @@ func file_dispatcher_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dispatcher_proto_rawDesc), len(file_dispatcher_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_dispatcher_proto_goTypes,
 		DependencyIndexes: file_dispatcher_proto_depIdxs,
+		EnumInfos:         file_dispatcher_proto_enumTypes,
 		MessageInfos:      file_dispatcher_proto_msgTypes,
 	}.Build()
 	File_dispatcher_proto = out.File

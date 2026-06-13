@@ -1,0 +1,54 @@
+
+syntax = "proto3";
+
+package wardu.runtime.v1;
+
+option go_package = "shared/proto/runtime;runtime";
+
+service RuntimeService {
+  rpc Run(RunRequest) returns (RunResponse);
+  rpc GetExecution(GetExecutionRequest) returns (GetExecutionResponse);
+  rpc CancelExecution(CancelExecutionRequest) returns (CancelExecutionResponse);
+}
+
+
+message RunRequest {
+  string job_id = 1;
+  string attempt_id = 2;
+  repeated string entrypoint = 3;
+  bytes payload = 4;
+  float timeout_seconds = 5;
+  map<string, string> env = 6;
+}
+
+message RunResponse {
+  string execution_id = 1;
+}
+
+message GetExecutionRequest {
+  string execution_id = 1;
+}
+
+message GetExecutionResponse {
+  ExecutionStatus status = 1;
+  int32 exit_code = 2;
+  bytes result = 3;
+  string error = 4;
+}
+
+message CancelExecutionRequest {
+  string execution_id = 1;
+}
+
+message CancelExecutionResponse {}
+
+enum ExecutionStatus {
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+
+  EXECUTION_STATUS_PENDING = 1;
+  EXECUTION_STATUS_RUNNING = 2;
+
+  EXECUTION_STATUS_SUCCEEDED = 3;
+  EXECUTION_STATUS_FAILED = 4;
+  EXECUTION_STATUS_CANCELLED = 5;
+}

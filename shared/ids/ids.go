@@ -24,6 +24,6 @@ func NewAttemptID() string {
 	return New()
 }
 
-func NewOutboxID() string {
+func NewExecutionID() string {
 	return New()
 }

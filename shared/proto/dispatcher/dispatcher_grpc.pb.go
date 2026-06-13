@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DispatcherServiceClient interface {
 	RunJob(ctx context.Context, in *RunJobRequest, opts ...grpc.CallOption) (*RunJobResponse, error)
+	Heartbeat(ctx context.Context, opts ...grpc.CallOption) (DispatcherService_HeartbeatClient, error)
 }
 
 type dispatcherServiceClient struct {
@@ -38,11 +39,46 @@ func (c *dispatcherServiceClient) RunJob(ctx context.Context, in *RunJobRequest,
 	return out, nil
 }
 
+func (c *dispatcherServiceClient) Heartbeat(ctx context.Context, opts ...grpc.CallOption) (DispatcherService_HeartbeatClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DispatcherService_ServiceDesc.Streams[0], "/wardu.dispatcher.v1.DispatcherService/Heartbeat", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &dispatcherServiceHeartbeatClient{stream}
+	return x, nil
+}
+
+type DispatcherService_HeartbeatClient interface {
+	Send(*HeartbeatRequest) error
+	CloseAndRecv() (*HeartbeatResponse, error)
+	grpc.ClientStream
+}
+
+type dispatcherServiceHeartbeatClient struct {
+	grpc.ClientStream
+}
+
+func (x *dispatcherServiceHeartbeatClient) Send(m *HeartbeatRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *dispatcherServiceHeartbeatClient) CloseAndRecv() (*HeartbeatResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(HeartbeatResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DispatcherServiceServer is the server API for DispatcherService service.
 // All implementations must embed UnimplementedDispatcherServiceServer
 // for forward compatibility
 type DispatcherServiceServer interface {
 	RunJob(context.Context, *RunJobRequest) (*RunJobResponse, error)
+	Heartbeat(DispatcherService_HeartbeatServer) error
 	mustEmbedUnimplementedDispatcherServiceServer()
 }
 
@@ -52,6 +88,9 @@ type UnimplementedDispatcherServiceServer struct {
 
 func (UnimplementedDispatcherServiceServer) RunJob(context.Context, *RunJobRequest) (*RunJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunJob not implemented")
+}
+func (UnimplementedDispatcherServiceServer) Heartbeat(DispatcherService_HeartbeatServer) error {
+	return status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedDispatcherServiceServer) mustEmbedUnimplementedDispatcherServiceServer() {}
 
@@ -84,6 +123,32 @@ func _DispatcherService_RunJob_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DispatcherService_Heartbeat_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DispatcherServiceServer).Heartbeat(&dispatcherServiceHeartbeatServer{stream})
+}
+
+type DispatcherService_HeartbeatServer interface {
+	SendAndClose(*HeartbeatResponse) error
+	Recv() (*HeartbeatRequest, error)
+	grpc.ServerStream
+}
+
+type dispatcherServiceHeartbeatServer struct {
+	grpc.ServerStream
+}
+
+func (x *dispatcherServiceHeartbeatServer) SendAndClose(m *HeartbeatResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *dispatcherServiceHeartbeatServer) Recv() (*HeartbeatRequest, error) {
+	m := new(HeartbeatRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DispatcherService_ServiceDesc is the grpc.ServiceDesc for DispatcherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -96,6 +161,12 @@ var DispatcherService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DispatcherService_RunJob_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Heartbeat",
+			Handler:       _DispatcherService_Heartbeat_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "dispatcher.proto",
 }

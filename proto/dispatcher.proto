@@ -7,6 +7,7 @@ option go_package = "shared/proto/dispatcher;dispatcher";
 
 service DispatcherService {
   rpc RunJob(RunJobRequest) returns (RunJobResponse);
+  rpc Heartbeat(stream HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message RunJobRequest {
@@ -22,4 +23,31 @@ message RunJobRequest {
 message RunJobResponse {
   string job_id = 1;
   string status = 2;
+}
+
+message HeartbeatRequest {
+  string execution_id = 1;
+  string job_id = 2;
+  string attempt_id = 3;
+
+  ExecutionStatus status = 4;
+
+  int64 pid = 5;
+
+  int64 unix_time = 6;
+}
+
+message HeartbeatResponse {
+  bool accepted = 1;
+}
+
+enum ExecutionStatus {
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+
+  EXECUTION_STATUS_PENDING = 1;
+  EXECUTION_STATUS_RUNNING = 2;
+
+  EXECUTION_STATUS_SUCCEEDED = 3;
+  EXECUTION_STATUS_FAILED = 4;
+  EXECUTION_STATUS_CANCELLED = 5;
 }

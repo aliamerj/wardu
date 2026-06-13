@@ -8,6 +8,7 @@ import (
 
 type Client struct {
 	k8s *kubernetes.Clientset
+	cfg *rest.Config
 }
 
 func New() *Client {
@@ -22,5 +23,5 @@ func New() *Client {
 	}
 
 	log.Info().Msg("kubernetes client initialized")
-	return &Client{k8s: cs}
+	return &Client{k8s: cs, cfg: cfg}
 }
