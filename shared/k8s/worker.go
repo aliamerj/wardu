@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aliamerj/wardu/shared/env"
 	"github.com/aliamerj/wardu/shared/models"
 	"github.com/google/uuid"
 	zlog "github.com/rs/zerolog/log"
@@ -46,9 +47,17 @@ func (c *Client) CreateWorker(ctx context.Context, ns *models.Namespace, job *mo
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "worker",
-							Image:   image,
-							Command: job.Entrypoint,
+							Name:  "runtime",
+							Image: "wardu/runtime:v1",
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: int32(env.GetInt("RUNTIME_GRPC_PORT", 8083)),
+								},
+							},
+						},
+						{
+							Name:  "worker",
+							Image: image,
 						},
 					},
 				},

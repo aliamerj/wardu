@@ -36,9 +36,11 @@ func (g *gRPCServer) execute(ctx context.Context, exec *Execution, req *pb.RunRe
 	defer func() {
 		g.mu.Lock()
 		delete(g.executions, exec.ID)
+		count := len(g.executions)
 		g.mu.Unlock()
 
 		zlog.Info().
+			Int("active_executions", count).
 			Str("execution_id", exec.ID).
 			Msg("execution removed from runtime")
 	}()
@@ -59,6 +61,10 @@ func (g *gRPCServer) execute(ctx context.Context, exec *Execution, req *pb.RunRe
 			int32(pb.ExecutionStatus_EXECUTION_STATUS_FAILED),
 		)
 		exec.Error = err.Error()
+		zlog.Error().
+			Err(err).
+			Str("job_id", req.JobId).
+			Msg("failed to start process")
 		return
 	}
 
@@ -223,5 +229,13 @@ func collectLogs(
 		// publish log event
 		// persist log
 		// websocket fanout
+	}
+
+	if err := scanner.Err(); err != nil {
+		zlog.Error().
+			Err(err).
+			Str("job_id", execRec.JobID).
+			Str("stream", stream).
+			Msg("log stream error")
 	}
 }

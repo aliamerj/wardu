@@ -25,7 +25,7 @@ func main() {
 	)
 	defer stop()
 
-	grpcAddr := env.GetString("RUNTIME_GRPC_PORT", ":8082")
+	grpcAddr := env.GetString("RUNTIME_GRPC_PORT", ":8083")
 
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

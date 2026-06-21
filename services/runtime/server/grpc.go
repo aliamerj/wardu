@@ -56,7 +56,12 @@ func (g *gRPCServer) Run(ctx context.Context, req *pb.RunRequest) (*pb.RunRespon
 
 	g.mu.Lock()
 	g.executions[executionID] = exec
+	count := len(g.executions)
 	g.mu.Unlock()
+
+	zlog.Info().
+		Int("active_executions", count).
+		Msg("execution registered")
 
 	go g.execute(ctx, exec, req)
 
@@ -69,18 +74,20 @@ func (g *gRPCServer) startHeartbeatLoop(
 	ctx context.Context,
 ) {
 	for {
-		if err := g.heartbeatLoop(ctx); err != nil {
-
-			if ctx.Err() != nil {
-				return
-			}
-
-			zlog.Warn().
-				Err(err).
-				Msg("heartbeat stream disconnected, reconnecting")
-
-			time.Sleep(5 * time.Second)
+		if ctx.Err() != nil {
+			return
 		}
+
+		err := g.heartbeatLoop(ctx)
+		if err == nil {
+			return
+		}
+
+		zlog.Warn().
+			Err(err).
+			Msg("heartbeat stream disconnected, reconnecting")
+
+		time.Sleep(5 * time.Second)
 	}
 }
 

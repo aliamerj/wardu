@@ -89,8 +89,9 @@ func gracefulShutdown(
 	log.Info().
 		Msg("rabbitmq connection closed")
 
+	log.Info().Msg("stopping grpc server")
+
 	grpc.GracefulStop()
 
-	log.Info().
-		Msg("dispatcher gRPC shutdown complete")
+	log.Info().Msg("dispatcher gRPC shutdown complete")
 }

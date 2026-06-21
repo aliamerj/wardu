@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"io"
+	"sync"
+	"time"
 
 	"github.com/aliamerj/wardu/shared/database"
 	"github.com/aliamerj/wardu/shared/env"
@@ -12,23 +15,43 @@ import (
 	"google.golang.org/grpc"
 )
 
+type RuntimeExecution struct {
+	ExecutionID   string
+	JobID         string
+	AttemptID     string
+	PodName       string
+	Status        pb.ExecutionStatus
+	PID           int64
+	LastHeartbeat time.Time
+}
+
 type gRPCServer struct {
-	ctx      context.Context
-	db       database.Service
-	k8s      *k8s.Client
-	rabbitmq *r.RabbitMQ
-	sem      chan struct{}
+	ctx        context.Context
+	db         database.Service
+	k8s        *k8s.Client
+	rabbitmq   *r.RabbitMQ
+	sem        chan struct{}
+	mu         sync.RWMutex
+	executions map[string]*RuntimeExecution
 	pb.UnimplementedDispatcherServiceServer
 }
 
-func NewGrpc(ctx context.Context, server *grpc.Server, rabbitmq *r.RabbitMQ) *gRPCServer {
+func NewGrpc(
+	ctx context.Context,
+	server *grpc.Server,
+	rabbitmq *r.RabbitMQ,
+) *gRPCServer {
 	srv := &gRPCServer{
-		db:       database.New(),
-		k8s:      k8s.New(),
-		rabbitmq: rabbitmq,
-		ctx:      ctx,
-		sem:      make(chan struct{}, env.GetInt("MAX_WORKERS", 20)),
+		db:         database.New(),
+		k8s:        k8s.New(),
+		rabbitmq:   rabbitmq,
+		ctx:        ctx,
+		mu:         sync.RWMutex{},
+		executions: make(map[string]*RuntimeExecution),
+		sem:        make(chan struct{}, env.GetInt("MAX_WORKERS", 20)),
 	}
+
+	go srv.startExecutionMonitor(ctx)
 	pb.RegisterDispatcherServiceServer(server, srv)
 	zlog.Info().Msg("registered dispatcher gRPC service")
 	return srv
@@ -84,6 +107,46 @@ func (g *gRPCServer) RunJob(
 	}, nil
 }
 
+func (g *gRPCServer) Heartbeat(
+	stream pb.DispatcherService_HeartbeatServer,
+) error {
+	for {
+		hb, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		g.mu.Lock()
+
+		exec, ok := g.executions[hb.ExecutionId]
+		if !ok {
+			g.mu.Unlock()
+
+			zlog.Warn().
+				Str("execution_id", hb.ExecutionId).
+				Str("job_id", hb.JobId).
+				Msg("heartbeat received for unknown execution")
+
+			continue
+		}
+
+		exec.Status = pb.ExecutionStatus(hb.Status)
+		exec.PID = hb.Pid
+		exec.LastHeartbeat = time.Now().UTC()
+
+		g.mu.Unlock()
+
+		zlog.Debug().
+			Str("execution_id", hb.ExecutionId).
+			Str("job_id", hb.JobId).
+			Int64("pid", hb.Pid).
+			Msg("heartbeat received")
+	}
+}
+
 func buildOverridesOps(
 	req *pb.RunJobRequest,
 ) *r.JobOverrides {
@@ -123,4 +186,54 @@ func buildOverridesOps(
 	}
 
 	return &ops
+}
+
+func (g *gRPCServer) startExecutionMonitor(
+	ctx context.Context,
+) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			g.checkExecutions()
+		}
+	}
+}
+
+func (g *gRPCServer) checkExecutions() {
+	g.mu.RLock()
+
+	executions := make(
+		[]*RuntimeExecution,
+		0,
+		len(g.executions),
+	)
+
+	for _, exec := range g.executions {
+		executions = append(executions, exec)
+	}
+
+	g.mu.RUnlock()
+
+	for _, exec := range executions {
+
+		if time.Since(exec.LastHeartbeat) < 30*time.Second {
+			continue
+		}
+
+		zlog.Warn().
+			Str("execution_id", exec.ExecutionID).
+			Str("job_id", exec.JobID).
+			Str("attempt_id", exec.AttemptID).
+			Dur(
+				"since_last_heartbeat",
+				time.Since(exec.LastHeartbeat),
+			).
+			Msg("execution heartbeat timeout")
+	}
 }

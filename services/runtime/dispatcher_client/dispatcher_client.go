@@ -17,7 +17,7 @@ type Dispatcher struct {
 }
 
 func NewDispatcher() (*Dispatcher, error) {
-	addr := env.GetString("DISPATCHER_GRPC_ADDR", "localhost:8082")
+	addr := env.GetString("DISPATCHER_GRPC_ADDR", ":8082")
 
 	conn, err := grpc.NewClient(
 		addr,
